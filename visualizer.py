@@ -1,0 +1,269 @@
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+from matplotlib.lines import Line2D
+
+from parse import parse_edges, parse_grid, parse_size, parse_nodes, parse_1signal
+from times import TIME,TIMER,TIMESTAMP
+from folderopen import openfile
+
+#VARIJABLE
+from  config_variables import BLOCK_SIZE,WIRE_THICKNESS, PIN_WIRE_LENGHT, PIN_WIRE_THICKNESS, DRAWING_OFFSET,\
+ERROR_RED,COLOROF_CHAN_WIRE, COLOROF_SINKSOURCE,COLOROF_EDGEWIRE,COLOROF_EDGE_INDOT,COLOROF_EDGE_OUTDOT, SIGNAL_COLOR,\
+filename, tamnija
+
+
+
+
+def draw(r_filepath,want_edges,want_signal,signal_id,want_bb):
+    start_time = TIME()
+
+    filepath = 'b9/rrg.xml'
+    max_x, max_y = parse_size(filepath)
+    fig, ax = plt.subplots(figsize=(max_x, max_y))
+
+    #Ova dva se crtaju po default-u
+    draw_grid(filepath,ax)
+    draw_nodes(filepath,ax)
+
+    if(want_edges):
+        draw_edges(filepath,ax)
+    if(want_signal):
+        signal(signal_id,SIGNAL_COLOR,r_filepath,filepath,ax)
+
+    if(want_bb):
+        draw_bounding_box(signal_id,SIGNAL_COLOR,r_filepath,filepath,ax)
+
+    # Podešavanje izgleda grafika
+    ax.set_xlim(0, max_x*2-BLOCK_SIZE)
+    ax.set_ylim(0, max_y*2-BLOCK_SIZE)
+    ax.set_aspect('equal', adjustable='box')
+    ax.axis('off')
+    fig.canvas.manager.set_window_title("FPGA Grid Layout")
+    fig.tight_layout()
+    plt.rcParams['savefig.dpi'] = 400
+    plt.savefig(filename+TIMESTAMP()+'.png')
+
+    end_time = TIME()
+    print(TIMER(end_time-start_time))
+    openfile()
+
+def draw_grid(filepath,ax):
+
+    try:
+        grid_data, block_types = parse_grid(filepath)
+    except FileNotFoundError:
+        print(f"Greška: fajl '{filepath}' nije pronađen.")
+        return
+    except Exception as e:
+        print(f"Došlo je do greške prilikom parsiranja fajla: {e}")
+        return
+
+    colorsgrid = {
+        'io': "#808080",  # IO boja sa slike 12
+        'clb': '#E2DBDB', # CLB boja sa slike 12
+    }
+
+
+    for block_info in grid_data:
+        block_name = block_types.get(block_info['id'])
+        x, y = block_info['x'], block_info['y']
+
+        if block_name != 'EMPTY':
+
+            # Iscrtavanje kvadrata za blok
+            rect = patches.Rectangle(
+                (x*2*BLOCK_SIZE, y*2*BLOCK_SIZE), BLOCK_SIZE, BLOCK_SIZE,
+                facecolor=colorsgrid.get(block_name)
+            )
+            ax.add_patch(rect)
+            
+            # TEKST koordinate (x,y)
+            ax.text(
+                x*2*BLOCK_SIZE + 0.075*BLOCK_SIZE, y*2*BLOCK_SIZE + 0.70*BLOCK_SIZE, f"({x},{y})",
+                ha='left', va='top',
+                fontsize=7*BLOCK_SIZE,
+                fontfamily='sans-serif'
+            )
+            # TEKST BLOK TYPE
+            ax.text(
+                x*2*BLOCK_SIZE + 0.05*BLOCK_SIZE, y*2*BLOCK_SIZE + 0.05*BLOCK_SIZE, block_name.upper(),
+                ha='left', va='bottom', 
+                fontsize=12*BLOCK_SIZE,
+                fontweight='medium',     
+                fontfamily='sans-serif'
+            )
+
+def draw_nodes(filepath,ax):
+    try:
+        nodes_list = parse_nodes(filepath)
+    except FileNotFoundError:
+        print(f"Greška: fajl '{filepath}' nije pronađen.")
+        return
+    except Exception as e:
+        print(f"Došlo je do greške prilikom parsiranja fajla: {e}")
+        return
+    
+    for node in nodes_list:
+        if(node['type']=='CHANY'):
+            ax.add_line(Line2D([node['a_x1'],node['a_x2']], [node['a_y1']+DRAWING_OFFSET, node['a_y2']-DRAWING_OFFSET], color= COLOROF_CHAN_WIRE, linewidth=WIRE_THICKNESS))
+        elif(node['type']=='CHANX'):
+            ax.add_line(Line2D([node['a_x1']+DRAWING_OFFSET, node['a_x2']-DRAWING_OFFSET], [node['a_y1'], node['a_y2']], color= COLOROF_CHAN_WIRE, linewidth=WIRE_THICKNESS))
+
+def draw_edges(filepath,ax):
+    try:
+        edges_list = parse_edges(filepath)
+        nodes_list = parse_nodes(filepath)
+        nodes_dict = {node['id']: node for node in nodes_list}
+
+    except FileNotFoundError:
+        print(f"Greška: fajl '{filepath}' nije pronađen.")
+        return
+    except Exception as e:
+        print(f"Došlo je do greške prilikom parsiranja fajla: {e}")
+        return
+    for pin_node in nodes_list:
+        if(pin_node['type'] in ('IPIN','OPIN')):
+            if(pin_node['side']=='TOP_RIGHT'):
+                # CRTANJE TOP STRANE
+                ax.add_patch(patches.Circle((pin_node['a_x1'], pin_node['a_y1']), radius=0.005, color=COLOROF_SINKSOURCE, zorder=1))
+                ax.add_line(Line2D([pin_node['a_x1'], pin_node['a_x1']], [pin_node['a_y1'], pin_node['a_y1']+PIN_WIRE_LENGHT], color=COLOROF_EDGEWIRE, linewidth=PIN_WIRE_THICKNESS))
+                # CRTANJE RIGHT STRANE
+                ax.add_patch(patches.Circle((pin_node['a_x2'],pin_node['a_y2']), radius=0.01, color= COLOROF_SINKSOURCE, zorder=1))
+                ax.add_line(Line2D([pin_node['a_x2'], pin_node['a_x2']+PIN_WIRE_LENGHT], [pin_node['a_y2'], pin_node['a_y2']], color=COLOROF_EDGEWIRE, linewidth=PIN_WIRE_THICKNESS))
+            else:
+                ax.add_patch(patches.Circle((pin_node['a_x1'], pin_node['a_y1']), radius=0.005, color=COLOROF_SINKSOURCE, zorder=1))
+                ax.add_line(Line2D([pin_node['a_x1'], pin_node['a_x2']], [pin_node['a_y1'], pin_node['a_y2']], color=COLOROF_EDGEWIRE, linewidth=PIN_WIRE_THICKNESS))
+
+    for edge in edges_list:
+        source_id, sink_id = edge['source'],edge['sink']
+        source_node = nodes_dict.get(source_id)
+        sink_node = nodes_dict.get(sink_id)
+        draw_edge_connection(source_node,sink_node,ax)
+
+def draw_edge_connection(node1, node2, ax):
+    if(node1['type']=='CHANX' and node2['type']=='CHANX'):
+        if(node1['x'] < node2['x']):
+            ax.add_line(Line2D([node1['a_x2'], node2['a_x1']], [node1['a_y2'], node2['a_y1']], color=COLOROF_EDGEWIRE, linewidth=WIRE_THICKNESS))
+        else:
+            ax.add_line(Line2D([node2['a_x2'], node1['a_x1']], [node2['a_y2'], node1['a_y1']], color=COLOROF_EDGEWIRE, linewidth=WIRE_THICKNESS))
+    elif(node1['type']=='CHANY' and node2['type']=='CHANY'):
+        if(node1['y'] < node2['y']):
+            ax.add_line(Line2D([node1['a_x2'], node2['a_x1']], [node1['a_y2'], node2['a_y1']], color=COLOROF_EDGEWIRE, linewidth=WIRE_THICKNESS))
+        else:
+            ax.add_line(Line2D([node2['a_x2'], node1['a_x1']], [node2['a_y2'], node1['a_y1']], color=COLOROF_EDGEWIRE, linewidth=WIRE_THICKNESS))
+    #PIN NA ZICU (IPIN/OPIN -> CHANX/CHANX)
+    elif (node1['type'] in ('CHANX', 'CHANY') and node2['type'] in ('IPIN', 'OPIN')) or \
+    (node2['type'] in ('CHANX', 'CHANY') and node1['type'] in ('IPIN', 'OPIN')):
+        pin_node = node1 if node1['type'] in ('IPIN', 'OPIN') else node2
+        wire_node = node2 if node2['type'] in ('CHANX', 'CHANY') else node1
+
+        b_x, b_y = 0,0
+        if(pin_node['side']=='TOP_RIGHT'):
+                if(wire_node['type']=='CHANX'):
+                    b_x, b_y = pin_node['a_x1'], wire_node['a_y1']
+                else:
+                    b_x, b_y = wire_node['a_x1'], pin_node['a_y2']
+        else:
+            if(pin_node['side'] in ('TOP','BOTTOM')):
+               b_x, b_y = pin_node['a_x1'], wire_node['a_y1']
+            else:
+                b_x, b_y = wire_node['a_x1'], pin_node['a_y2']
+        ax.add_patch(patches.Circle((b_x, b_y), radius=0.005, color=COLOROF_EDGE_INDOT if pin_node['type'] == 'IPIN' else COLOROF_EDGE_OUTDOT, zorder=1))
+
+def draw_connection(node1, node2, ax, SIGNAL_COLOR):
+    #ZICA NA ZICU
+    if(node1['type'] in ('CHANX','CHANY') and node2['type'] in ('CHANX','CHANY')):
+        if(node1['type']==node2['type']):
+            if(node1['x'] < node2['x'] or node1['y']<node2['y']):
+                ax.add_line(Line2D([node1['a_x2'], node2['a_x1']], [node1['a_y2'], node2['a_y1']], color=SIGNAL_COLOR, linewidth=WIRE_THICKNESS))
+            else:
+                ax.add_line(Line2D([node2['a_x2'], node1['a_x1']], [node2['a_y2'], node1['a_y1']], color=SIGNAL_COLOR, linewidth=WIRE_THICKNESS))
+        else:
+            #PROVERAVA NAJBLIZU LOKACIJU 
+            conn_x1,conn_x2,conn_y1,conn_y2 = 0,0,0,0
+            #PRVO NALAZIMO GDE NODE2 TREBA DA SE VEZUJE
+            median= (node1['a_x1']+node1['a_x2'])/2
+            if(abs(median-node2['a_x1'])< abs(median-node2['a_x2'])):
+                conn_x2 = node2['a_x1']
+            else:
+                conn_x2 = node2['a_x2']
+            median= (node1['a_y1']+node1['a_y2'])/2
+            if(abs(median-node2['a_y1'])< abs(median-node2['a_y2'])):
+                conn_y2 = node2['a_y1']
+            else:
+                conn_y2 = node2['a_y2']
+            #ONDA NALAZIMO GDE NODE1 TREBA DA SE VEZUJE
+            median= (node2['a_x1']+node2['a_x2'])/2
+            if(abs(median-node1['a_x1'])< abs(median-node1['a_x2'])):
+                conn_x1 = node1['a_x1']
+            else:
+                conn_x1 = node1['a_x2']
+            median= (node2['a_y1']+node2['a_y2'])/2
+            if(abs(median-node1['a_y1'])< abs(median-node1['a_y2'])):
+                conn_y1 = node1['a_y1']
+            else:
+                conn_y1 = node1['a_y2']
+
+            ax.add_line(Line2D([conn_x1, conn_x2],[conn_y1, conn_y2], color=SIGNAL_COLOR, linewidth=WIRE_THICKNESS))
+    #SOURCE/SINK NA ZICU
+    elif(node1['type'] in ('SOURCE','CHANX','CHANY') and node2['type'] in ('CHANX','CHANY','SINK')):
+        wire_node = node1 if node1['type'] in ('CHANX', 'CHANY') else node2
+        s_node = node2 if node2['type'] in ('SINK', 'SOURCE') else node1
+        if(wire_node['type']=='CHANX'):
+            ax.add_line(Line2D([s_node['a_x1'],s_node['a_x1']],[s_node['a_y1'],wire_node['a_y1']], color=SIGNAL_COLOR, linewidth=WIRE_THICKNESS))
+        else:
+            ax.add_line(Line2D([s_node['a_x1'],wire_node['a_x1']],[s_node['a_y1'],s_node['a_y1']], color=SIGNAL_COLOR, linewidth=WIRE_THICKNESS))
+
+def draw_singlenode(node,ax,SIGNAL_COLOR):
+    type,a_x1,a_y1,a_x2,a_y2 = node['type'],node['a_x1'],node['a_y1'],node['a_x2'],node['a_y2']
+    if(type in ('SINK','SOURCE')):
+            ax.add_patch(patches.Circle((a_x1, a_y1), radius=0.1, color=SIGNAL_COLOR if type=='SINK' else tamnija(SIGNAL_COLOR) , zorder=1))
+    elif(type=='CHANY'):
+        ax.add_line(Line2D([a_x1, a_x2], [a_y1+DRAWING_OFFSET, a_y2-DRAWING_OFFSET], color=SIGNAL_COLOR, linewidth=WIRE_THICKNESS*3))
+    elif(type=='CHANX'):
+        ax.add_line(Line2D([a_x1+DRAWING_OFFSET, a_x2-DRAWING_OFFSET], [a_y1, a_y2], color=SIGNAL_COLOR, linewidth=WIRE_THICKNESS*3))
+
+def signal(signal_id,SIGNAL_COLOR,route_filepath,filepath,ax):
+
+    nodes_dict = {node['id']: node for node in parse_nodes(filepath)}
+    signal_list = parse_1signal(route_filepath,signal_id)
+
+    for i in range(len(signal_list)-1):
+        node = nodes_dict.get(signal_list[i])
+        draw_singlenode(node,ax,SIGNAL_COLOR)
+        if(node['type']=='SINK'):
+            continue
+        elif(node['type']=='SOURCE' or (i+2<len(signal_list) and nodes_dict.get(signal_list[i+2])['type']=='SINK')):
+            node2 = nodes_dict.get(signal_list[i+2])
+        else:
+            node2 = nodes_dict.get(signal_list[i+1])
+        draw_connection(node,node2,ax,SIGNAL_COLOR)
+    draw_singlenode(nodes_dict.get(signal_list[len(signal_list)-1]),ax,SIGNAL_COLOR)
+
+def draw_bounding_box(signal_id,SIGNAL_COLOR,route_filepath,filepath,ax):
+    max_x,max_y = 0,0
+    min_x, min_y = 7*2+BLOCK_SIZE,7*2+BLOCK_SIZE
+
+    nodes_dict = {node['id']: node for node in parse_nodes(filepath)}
+    signal_id_list = parse_1signal(route_filepath,signal_id)
+    signal_list = [nodes_dict[node_id] for node_id in signal_id_list if node_id in nodes_dict]
+
+    for node in signal_list:
+        if node['type'] in ('SINK, SOURCE'):
+            #DA SELEKTUJE CEO BLOK A NE SAMO POLA BLOKA
+            node['a_x1'],node['a_x2'],node['a_y1'],node['a_y2'] = 2*node['x']*BLOCK_SIZE,(2*node['x']+1)*BLOCK_SIZE,2*node['y']*BLOCK_SIZE,(2*node['y']+1)*BLOCK_SIZE
+        if (min(node['a_x1'],node['a_x2'])<min_x):
+            min_x = min(node['a_x1'],node['a_x2'])
+        if (max(node['a_x1'],node['a_x2'])>max_x):
+            max_x = max(node['a_x1'],node['a_x2'])
+        if (min(node['a_y1'],node['a_y2'])<min_y):
+            min_y = min(node['a_y1'],node['a_y2'])
+        if (max(node['a_y1'],node['a_y2'])>max_y):
+            max_y = max(node['a_y1'],node['a_y2'])
+    ax.add_patch(patches.Rectangle((min_x, min_y),(max_x-min_x),(max_y-min_y),facecolor=SIGNAL_COLOR,edgecolor='none',alpha=0.2,linewidth=4*BLOCK_SIZE))
+
+if __name__ == '__main__':
+    print(f"{ERROR_RED}Greska: Ovaj fajl se ne moze pokrenuti!\n        Pokrenite main.py fajl!")
+    exit(1)
+    
