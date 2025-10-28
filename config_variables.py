@@ -26,4 +26,4 @@ def tamnija(hex_color):
     return f"#{int(r * 0.5):02x}{int(g * 0.5):02x}{int(b * 0.5):02x}"
 
 #FILENAME OF IMAGES
-filename = 'slike/fpga.png'
+file_prefix = 'slike/fpga_'

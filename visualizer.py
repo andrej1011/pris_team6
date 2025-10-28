@@ -4,18 +4,17 @@ import matplotlib.patches as patches
 from matplotlib.lines import Line2D
 
 from parse import parse_edges, parse_grid, parse_size, parse_nodes, parse_1signal
-from times import TIME,TIMER,TIMESTAMP
-from folderopen import openfile
+from times import TIME,TIMER
 
 #VARIJABLE
 from  config_variables import BLOCK_SIZE,WIRE_THICKNESS, PIN_WIRE_LENGHT, PIN_WIRE_THICKNESS, DRAWING_OFFSET,\
 ERROR_RED,COLOROF_CHAN_WIRE, COLOROF_SINKSOURCE,COLOROF_EDGEWIRE,COLOROF_EDGE_INDOT,COLOROF_EDGE_OUTDOT, SIGNAL_COLOR,\
-filename, tamnija
+ tamnija
 
 
 
 
-def draw(r_filepath,want_edges,want_signal,signal_id,want_bb):
+def draw(drawing_file,r_filepath,want_edges,want_signal,signal_id,want_bb):
     start_time = TIME()
 
     filepath = 'b9/rrg.xml'
@@ -41,12 +40,11 @@ def draw(r_filepath,want_edges,want_signal,signal_id,want_bb):
     ax.axis('off')
     fig.canvas.manager.set_window_title("FPGA Grid Layout")
     fig.tight_layout()
-    plt.rcParams['savefig.dpi'] = 400
-    plt.savefig(filename+TIMESTAMP()+'.png')
+    plt.rcParams['savefig.dpi'] = 600 #POVECAN DPI SLIKE
+    plt.savefig(drawing_file)
 
     end_time = TIME()
     print(TIMER(end_time-start_time))
-    openfile()
 
 def draw_grid(filepath,ax):
 
