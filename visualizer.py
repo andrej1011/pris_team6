@@ -2,20 +2,17 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.lines import Line2D
+from math import sqrt
 
 from parse import parse_edges, parse_grid, parse_size, parse_nodes, parse_1signal
-from times import TIME,TIMER
 
 #VARIJABLE
 from  config_variables import BLOCK_SIZE,WIRE_THICKNESS, PIN_WIRE_LENGHT, PIN_WIRE_THICKNESS, DRAWING_OFFSET,\
-ERROR_RED,COLOROF_CHAN_WIRE, COLOROF_SINKSOURCE,COLOROF_EDGEWIRE,COLOROF_EDGE_INDOT,COLOROF_EDGE_OUTDOT, SIGNAL_COLOR,\
- tamnija
-
+ERROR_RED,COLOROF_CHAN_WIRE, COLOROF_SINKSOURCE,COLOROF_EDGEWIRE,COLOROF_EDGE_INDOT,COLOROF_EDGE_OUTDOT, SIGNAL_COLOR
 
 
 
 def draw(drawing_file,r_filepath,want_edges,want_signal,signal_id,want_bb):
-    start_time = TIME()
 
     filepath = 'b9/rrg.xml'
     max_x, max_y = parse_size(filepath)
@@ -42,9 +39,6 @@ def draw(drawing_file,r_filepath,want_edges,want_signal,signal_id,want_bb):
     fig.tight_layout()
     plt.rcParams['savefig.dpi'] = 600 #POVECAN DPI SLIKE
     plt.savefig(drawing_file)
-
-    end_time = TIME()
-    print(TIMER(end_time-start_time))
 
 def draw_grid(filepath,ax):
 
@@ -169,6 +163,17 @@ def draw_edge_connection(node1, node2, ax):
                 b_x, b_y = wire_node['a_x1'], pin_node['a_y2']
         ax.add_patch(patches.Circle((b_x, b_y), radius=0.005, color=COLOROF_EDGE_INDOT if pin_node['type'] == 'IPIN' else COLOROF_EDGE_OUTDOT, zorder=1))
 
+def triangle(x_center, y_center, height):
+    s = (2 * height) / sqrt(3)
+    r_outer = height * 2/3
+    r_inner = height * 1/3
+
+    v1 = (x_center, y_center + r_outer)         # Gornji vrh
+    v2 = (x_center - s/2, y_center - r_inner)   # Donji levi vrh
+    v3 = (x_center + s/2, y_center - r_inner)   # Donji desni vrh
+
+    return [v1, v2, v3]
+
 def draw_connection(node1, node2, ax, SIGNAL_COLOR):
     #ZICA NA ZICU
     if(node1['type'] in ('CHANX','CHANY') and node2['type'] in ('CHANX','CHANY')):
@@ -215,8 +220,10 @@ def draw_connection(node1, node2, ax, SIGNAL_COLOR):
 
 def draw_singlenode(node,ax,SIGNAL_COLOR):
     type,a_x1,a_y1,a_x2,a_y2 = node['type'],node['a_x1'],node['a_y1'],node['a_x2'],node['a_y2']
-    if(type in ('SINK','SOURCE')):
-            ax.add_patch(patches.Circle((a_x1, a_y1), radius=0.1, color=SIGNAL_COLOR if type=='SINK' else tamnija(SIGNAL_COLOR) , zorder=1))
+    if(type =='SINK'):
+        ax.add_patch(patches.Circle((a_x1, a_y1), radius=0.1, color=SIGNAL_COLOR))
+    elif(type=='SOURCE'):
+        ax.add_patch(patches.Polygon(triangle(a_x1, a_y1, 0.3), color=SIGNAL_COLOR))
     elif(type=='CHANY'):
         ax.add_line(Line2D([a_x1, a_x2], [a_y1+DRAWING_OFFSET, a_y2-DRAWING_OFFSET], color=SIGNAL_COLOR, linewidth=WIRE_THICKNESS*3))
     elif(type=='CHANX'):

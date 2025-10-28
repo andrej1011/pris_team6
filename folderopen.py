@@ -6,14 +6,17 @@ def openfile(filename="slike/fpga.png"):
     try:
         # MacOS
         subprocess.run(["open", "-R", filename])
-        # Linux
-        directory = os.path.dirname(filename)
-        subprocess.run(["xdg-open", directory])
-        # Windows
-        os.startfile(filename)
-
+        
     except Exception as e:
-        print(f"An error occurred: {e}")
+        try:
+            # Linux
+            directory = os.path.dirname(filename)
+            subprocess.run(["xdg-open", directory])
+        except:
+            # Windows
+            directory = os.path.dirname(filename)
+            os.startfile(filename)
+            print(f"An error occurred: {e}")
 
 def new_filename(prefix="slike/fpga_"):
 

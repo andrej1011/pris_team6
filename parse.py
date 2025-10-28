@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
 import re
-from config_variables import ERROR_RED, BLOCK_SIZE, WIRE_LENGTH, PIN_WIRE_LENGHT,DRAWING_OFFSET
+from config_variables import ERROR_RED, BLOCK_SIZE, WIRE_LENGTH, PIN_WIRE_LENGHT
 
 
 
