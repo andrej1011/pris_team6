@@ -2,6 +2,9 @@
 slike/.DS_Store
 .DS_Store
 
+#__pycache__
+__pycache__/
+
 #Slike generisane vizuelizacijom
 slike/*
 !slike/fpga.png
