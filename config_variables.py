@@ -1,3 +1,4 @@
+import random
 # GLOBAL VARIABLES
 
 # ZA PROMENU VELICINA PROMENITE IH OVDE I SAMO OVDE
@@ -23,6 +24,29 @@ def tamnija(hex_color):  #TODO: ZASTARELA FUNKCIJA, Deprecate this function
     hex = hex_color.lstrip('#')
     r, g, b = int(hex[0:2], 16), int(hex[2:4], 16), int(hex[4:6], 16)
     return f"#{int(r * 0.5):02x}{int(g * 0.5):02x}{int(b * 0.5):02x}"
+
+def SIGNAL_COLOR(broj_boja):
+    FIKSNE_BOJE = [
+    "#34AAFF",  # 1. Plava
+    "#B00101",  # 2. Crvena
+    "#04B304",  # 3. Zelena
+    "#3434FF",  # 4. Tamnoplava
+    "#FFAA00",  # 5. Narandžasta
+    "#53FDFD"   # 6. Cijan
+    ]
+    
+    lista_boja = []
+    for i in range(broj_boja):
+        if i < len(FIKSNE_BOJE):
+            # Uzmi fiksnu boju iz liste
+            lista_boja.append(FIKSNE_BOJE[i])
+        else:
+            # Generiši nasumičnu boju
+            color = f'#{random.randint(0, 0xFFFFFF):06x}'
+            lista_boja.append(color)
+            
+    return lista_boja
+
 
 #FILENAME OF IMAGES
 file_prefix = 'slike/fpga_'

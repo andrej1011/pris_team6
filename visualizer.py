@@ -4,15 +4,17 @@ import matplotlib.patches as patches
 from matplotlib.lines import Line2D
 from math import sqrt
 
-from parse import parse_edges, parse_grid, parse_size, parse_nodes, parse_1signal
+from folderopen import only_number
+from parse import parse_edges, parse_grid, parse_size, parse_nodes, parse_1signal,parse_all_signals
 
 #VARIJABLE
 from  config_variables import BLOCK_SIZE,WIRE_THICKNESS, PIN_WIRE_LENGHT, PIN_WIRE_THICKNESS, DRAWING_OFFSET,\
-ERROR_RED,COLOROF_CHAN_WIRE, COLOROF_SINKSOURCE,COLOROF_EDGEWIRE,COLOROF_EDGE_INDOT,COLOROF_EDGE_OUTDOT, SIGNAL_COLOR
+ERROR_RED,COLOROF_CHAN_WIRE, COLOROF_SINKSOURCE,COLOROF_EDGEWIRE,COLOROF_EDGE_INDOT,COLOROF_EDGE_OUTDOT, \
+SIGNAL_COLOR
 
 
 
-def draw(drawing_file,r_filepath,want_edges,want_signal,signal_id,want_bb):
+def draw(drawing_file,r_filepath,want_edges,want_signal,signal_id,want_bb,want_overlap):
 
     filepath = 'b9/rrg.xml'
     max_x, max_y = parse_size(filepath)
@@ -25,11 +27,14 @@ def draw(drawing_file,r_filepath,want_edges,want_signal,signal_id,want_bb):
     if(want_edges):
         draw_edges(filepath,ax)
     if(want_signal):
-        draw_signal(signal_id,SIGNAL_COLOR,r_filepath,filepath,ax)
-
+        draw_multi_signals(signal_id,r_filepath,filepath,ax)
     if(want_bb):
         draw_bounding_box(signal_id,SIGNAL_COLOR,r_filepath,filepath,ax)
-
+    if(want_overlap):
+        #TODO must implement multi-signal before
+        draw_signal(signal_id,SIGNAL_COLOR,r_filepath,filepath,ax)
+        draw_signal(72,"#FFEE00",r_filepath,filepath,ax)
+        draw_overlap(signal_id,72,r_filepath,ax,SIGNAL_COLOR,"#FFEE00")   
     # Podešavanje izgleda grafika
     ax.set_xlim(0, max_x*2-BLOCK_SIZE)
     ax.set_ylim(0, max_y*2-BLOCK_SIZE)
@@ -179,7 +184,7 @@ def draw_singlenode(node,ax,SIGNAL_COLOR):
     if(type =='SINK'):
         ax.add_patch(patches.Circle((a_x1, a_y1), radius=0.1, color=SIGNAL_COLOR))
     elif(type=='SOURCE'):
-        ax.add_patch(patches.Polygon(triangle(a_x1, a_y1, 0.3), color=SIGNAL_COLOR))
+        ax.add_patch(patches.Polygon(triangle(a_x1, a_y1, 0.3), color=SIGNAL_COLOR+"80"))
     elif(type=='CHANY'):
         ax.add_line(Line2D([a_x1, a_x2], [a_y1+DRAWING_OFFSET, a_y2-DRAWING_OFFSET], color=SIGNAL_COLOR, linewidth=WIRE_THICKNESS*3))
     elif(type=='CHANX'):
@@ -261,7 +266,6 @@ def draw_signal(signal_id,SIGNAL_COLOR,route_filepath,filepath,ax):
     for node in signal_nodes:
         draw_singlenode(node,ax,SIGNAL_COLOR)
     for edge in signal_edges:
-        print(f'{edge}')
         ax.add_line(Line2D([edge[0],edge[1]], [edge[2],edge[3]], color=SIGNAL_COLOR, linewidth=WIRE_THICKNESS))
 
 def calc_bounding_box(signal_id,route_filepath,filepath):
@@ -284,8 +288,43 @@ def calc_bounding_box(signal_id,route_filepath,filepath):
     return min_x, min_y, max_x,max_y
 
 def draw_bounding_box(signal_id,SIGNAL_COLOR,route_filepath,filepath,ax):
+    #automatsko crtanje i signala
+    draw_signal(signal_id,SIGNAL_COLOR,route_filepath,filepath)
     min_x, min_y, max_x, max_y  = calc_bounding_box(signal_id,route_filepath,filepath)
     ax.add_patch(patches.Rectangle((min_x, min_y),(max_x-min_x),(max_y-min_y),facecolor=SIGNAL_COLOR,edgecolor='none',alpha=0.2,linewidth=4*BLOCK_SIZE))
+
+def calc_all_bboxes(route_filepath,filepath):
+    all_signal = parse_all_signals(route_filepath)
+    all_bboxes = []
+    for signal in all_signal:
+        all_bboxes.append([signal,calc_bounding_box(signal,route_filepath,filepath)])
+    return all_bboxes
+    #signal[0] je signal_id a signal[1] je lista min_x, min_y, max_x,max_y od bb-a
+
+def draw_overlap(signal_id1,signal_id2,route_filepath,ax,OVERLAP_1COLOR,OVERLAP_2COLOR=None,filepath='b9/rrg.xml',prefix = "overlap_reports/overlap_"):
+    
+    #TODO must implement multi-signal before
+
+    report_file = f"{prefix}{only_number()-1}.log"
+    bb1= calc_bounding_box(signal_id1,route_filepath,filepath)
+    bb2= calc_bounding_box(signal_id2,route_filepath,filepath)
+    if OVERLAP_2COLOR is None:
+        OVERLAP_2COLOR = OVERLAP_1COLOR
+    with open(report_file, 'a', encoding='utf-8') as log_file:
+        preklapanje_X = (bb1[0] <= bb2[2] and bb1[2] >= bb2[0])
+        preklapanje_Y = (bb1[1] <= bb2[3] and bb1[3] >= bb2[1])
+
+        if (preklapanje_X and preklapanje_Y):
+            log_file.write(f"BOUNDING BOX SIGNALA {signal_id1} I {signal_id2} SE PREKLAPAJU.\n")
+        else:
+            log_file.write(f"BOUNDING BOX SIGNALA {signal_id1} I {signal_id2} SE NE PREKLAPAJU.\n")
+        draw_bounding_box(signal_id1,OVERLAP_1COLOR,route_filepath,filepath,ax)
+        draw_bounding_box(signal_id2,OVERLAP_2COLOR,route_filepath,filepath,ax)
+
+def draw_multi_signals(signal_id_list,route_filepath,filepath,ax):
+    lista_boja = SIGNAL_COLOR(len(signal_id_list))
+    for (signal_id, color) in zip(signal_id_list, lista_boja):
+        draw_signal(signal_id, color, route_filepath, filepath, ax)
 
 if __name__ == '__main__':
     print(f"{ERROR_RED}Greska: Ovaj fajl se ne moze pokrenuti!\n        Pokrenite main.py fajl!")

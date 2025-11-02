@@ -11,6 +11,9 @@ slike/*
 !slike/fpga.png
 !slike/fpga.png
 
+#Overlap reports
+overlap_reports/*
+!overlap_reports/overlap.log
 #Fajlovi koji sluze samo za testiranje novih funkcija
 tester_fajlovi/
 

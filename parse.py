@@ -110,10 +110,10 @@ def parse_nodes(filepath):
             'ptc': ptc,
             'x': x,
             'y': y,
-            'a_x1':absolute_x1,
-            'a_y1':absolute_y1,
-            'a_x2':absolute_x2,
-            'a_y2':absolute_y2,
+            'a_x1':round(absolute_x1, 2),
+            'a_y1':round(absolute_y1, 2),
+            'a_x2':round(absolute_x2, 2),
+            'a_y2':round(absolute_y2, 2),
         }
         if (side is not None):
             node_info['side'] = side
