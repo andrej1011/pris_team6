@@ -6,9 +6,13 @@ slike/.DS_Store
 __pycache__/
 
 #Slike generisane vizuelizacijom
+file_counter.txt
 slike/*
 !slike/fpga.png
 !slike/fpga.png
 
 #Fajlovi koji sluze samo za testiranje novih funkcija
 tester_fajlovi/
+
+#Hardcoded main za brze testiranje novih funkcija
+hmain.py

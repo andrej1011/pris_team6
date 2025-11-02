@@ -25,7 +25,7 @@ def draw(drawing_file,r_filepath,want_edges,want_signal,signal_id,want_bb):
     if(want_edges):
         draw_edges(filepath,ax)
     if(want_signal):
-        signal(signal_id,SIGNAL_COLOR,r_filepath,filepath,ax)
+        draw_signal(signal_id,SIGNAL_COLOR,r_filepath,filepath,ax)
 
     if(want_bb):
         draw_bounding_box(signal_id,SIGNAL_COLOR,r_filepath,filepath,ax)
@@ -35,7 +35,7 @@ def draw(drawing_file,r_filepath,want_edges,want_signal,signal_id,want_bb):
     ax.set_ylim(0, max_y*2-BLOCK_SIZE)
     ax.set_aspect('equal', adjustable='box')
     ax.axis('off')
-    fig.canvas.manager.set_window_title("FPGA Grid Layout")
+    fig.canvas.manager.set_window_title("FPGA Chip Layout")
     fig.tight_layout()
     plt.rcParams['savefig.dpi'] = 600 #POVECAN DPI SLIKE
     plt.savefig(drawing_file)
@@ -174,50 +174,6 @@ def triangle(x_center, y_center, height):
 
     return [v1, v2, v3]
 
-def draw_connection(node1, node2, ax, SIGNAL_COLOR):
-    #ZICA NA ZICU
-    if(node1['type'] in ('CHANX','CHANY') and node2['type'] in ('CHANX','CHANY')):
-        if(node1['type']==node2['type']):
-            if(node1['x'] < node2['x'] or node1['y']<node2['y']):
-                ax.add_line(Line2D([node1['a_x2'], node2['a_x1']], [node1['a_y2'], node2['a_y1']], color=SIGNAL_COLOR, linewidth=WIRE_THICKNESS))
-            else:
-                ax.add_line(Line2D([node2['a_x2'], node1['a_x1']], [node2['a_y2'], node1['a_y1']], color=SIGNAL_COLOR, linewidth=WIRE_THICKNESS))
-        else:
-            #PROVERAVA NAJBLIZU LOKACIJU 
-            conn_x1,conn_x2,conn_y1,conn_y2 = 0,0,0,0
-            #PRVO NALAZIMO GDE NODE2 TREBA DA SE VEZUJE
-            median= (node1['a_x1']+node1['a_x2'])/2
-            if(abs(median-node2['a_x1'])< abs(median-node2['a_x2'])):
-                conn_x2 = node2['a_x1']
-            else:
-                conn_x2 = node2['a_x2']
-            median= (node1['a_y1']+node1['a_y2'])/2
-            if(abs(median-node2['a_y1'])< abs(median-node2['a_y2'])):
-                conn_y2 = node2['a_y1']
-            else:
-                conn_y2 = node2['a_y2']
-            #ONDA NALAZIMO GDE NODE1 TREBA DA SE VEZUJE
-            median= (node2['a_x1']+node2['a_x2'])/2
-            if(abs(median-node1['a_x1'])< abs(median-node1['a_x2'])):
-                conn_x1 = node1['a_x1']
-            else:
-                conn_x1 = node1['a_x2']
-            median= (node2['a_y1']+node2['a_y2'])/2
-            if(abs(median-node1['a_y1'])< abs(median-node1['a_y2'])):
-                conn_y1 = node1['a_y1']
-            else:
-                conn_y1 = node1['a_y2']
-
-            ax.add_line(Line2D([conn_x1, conn_x2],[conn_y1, conn_y2], color=SIGNAL_COLOR, linewidth=WIRE_THICKNESS))
-    #SOURCE/SINK NA ZICU
-    elif(node1['type'] in ('SOURCE','CHANX','CHANY') and node2['type'] in ('CHANX','CHANY','SINK')):
-        wire_node = node1 if node1['type'] in ('CHANX', 'CHANY') else node2
-        s_node = node2 if node2['type'] in ('SINK', 'SOURCE') else node1
-        if(wire_node['type']=='CHANX'):
-            ax.add_line(Line2D([s_node['a_x1'],s_node['a_x1']],[s_node['a_y1'],wire_node['a_y1']], color=SIGNAL_COLOR, linewidth=WIRE_THICKNESS))
-        else:
-            ax.add_line(Line2D([s_node['a_x1'],wire_node['a_x1']],[s_node['a_y1'],s_node['a_y1']], color=SIGNAL_COLOR, linewidth=WIRE_THICKNESS))
-
 def draw_singlenode(node,ax,SIGNAL_COLOR):
     type,a_x1,a_y1,a_x2,a_y2 = node['type'],node['a_x1'],node['a_y1'],node['a_x2'],node['a_y2']
     if(type =='SINK'):
@@ -229,31 +185,89 @@ def draw_singlenode(node,ax,SIGNAL_COLOR):
     elif(type=='CHANX'):
         ax.add_line(Line2D([a_x1+DRAWING_OFFSET, a_x2-DRAWING_OFFSET], [a_y1, a_y2], color=SIGNAL_COLOR, linewidth=WIRE_THICKNESS*3))
 
-def signal(signal_id,SIGNAL_COLOR,route_filepath,filepath,ax):
-
+def calc_si_nodes(node_id_list,filepath):
     nodes_dict = {node['id']: node for node in parse_nodes(filepath)}
-    signal_list = parse_1signal(route_filepath,signal_id)
-
-    for i in range(len(signal_list)-1):
-        node = nodes_dict.get(signal_list[i])
-        draw_singlenode(node,ax,SIGNAL_COLOR)
-        if(node['type']=='SINK'):
-            continue
-        elif(node['type']=='SOURCE' or (i+2<len(signal_list) and nodes_dict.get(signal_list[i+2])['type']=='SINK')):
-            node2 = nodes_dict.get(signal_list[i+2])
+    signal_nodes_objects = []
+    for node_id in node_id_list:
+        node_object = nodes_dict.get(node_id)
+        if node_object:
+            signal_nodes_objects.append(node_object)
         else:
-            node2 = nodes_dict.get(signal_list[i+1])
-        draw_connection(node,node2,ax,SIGNAL_COLOR)
-    draw_singlenode(nodes_dict.get(signal_list[len(signal_list)-1]),ax,SIGNAL_COLOR)
+            print(f"Upozorenje: Čvor ID {node_id} iz signala nije pronađen u nodes_dict.")
+    return signal_nodes_objects
 
-def draw_bounding_box(signal_id,SIGNAL_COLOR,route_filepath,filepath,ax):
+def calc_si_edges(signal_nodes):
+    list_conns = []
+    for i in range(len(signal_nodes)-1):
+        node1 = signal_nodes[i]
+        if(node1['type']=='SINK'):
+            continue
+        node2 = signal_nodes[i+1]
+        if(node2['type'] in ('IPIN','OPIN')):
+            node2 = signal_nodes[i+2]
+        #sad smo sigurni da pravilno vezujemo, sad mozemo vezivati, tj return koordinate
+        x1,y1,x2,y2 = 0,0,0,0
+        #ZICA NA ZICU
+        if(node1['type'] in ('CHANX','CHANY') and node2['type'] in ('CHANX','CHANY')):
+            if(node1['type']==node2['type']):
+                if(node1['x'] < node2['x'] or node1['y']<node2['y']):
+                    x1,x2,y1,y2 = node1['a_x2'],node2['a_x1'],node1['a_y2'], node2['a_y1']
+                else:
+                    x1,x2,y1,y2 = node2['a_x2'],node1['a_x1'],node2['a_y2'],node1['a_y1']
+            else:
+                median=(node1['a_x1']+node1['a_x2'])/2
+                if(abs(median-node2['a_x1'])< abs(median-node2['a_x2'])):
+                    x2 = node2['a_x1']
+                else:
+                    x2 = node2['a_x2']
+                median=(node1['a_y1']+node1['a_y2'])/2
+                if(abs(median-node2['a_y1'])< abs(median-node2['a_y2'])):
+                    y2 = node2['a_y1']
+                else:
+                    y2 = node2['a_y2']
+                #ONDA NALAZIMO GDE NODE1 TREBA DA SE VEZUJE
+                median=(node2['a_x1']+node2['a_x2'])/2
+                if(abs(median-node1['a_x1'])< abs(median-node1['a_x2'])):
+                    x1 = node1['a_x1']
+                else:
+                    x1 = node1['a_x2']
+                median= (node2['a_y1']+node2['a_y2'])/2
+                if(abs(median-node1['a_y1'])< abs(median-node1['a_y2'])):
+                    y1 = node1['a_y1']
+                else:
+                    y1 = node1['a_y2']
+        #SOURCE/SINK NA ZICU
+        elif(node1['type'] in ('SOURCE','CHANX','CHANY') and node2['type'] in ('CHANX','CHANY','SINK')):
+            wire_node = node1 if node1['type'] in ('CHANX', 'CHANY') else node2
+            s_node = node2 if node2['type'] in ('SINK', 'SOURCE') else node1
+            if(wire_node['type']=='CHANX'):
+                x1,x2,y1,y2 = s_node['a_x1'],s_node['a_x1'],s_node['a_y1'],wire_node['a_y1']
+            else:
+                x1,x2,y1,y2 = s_node['a_x1'],wire_node['a_x1'],s_node['a_y1'],s_node['a_y1']
+        if not(set([x1,x2,y1,y2]) == {0}):
+            list_conns.append([x1,x2,y1,y2])
+    return list_conns
+
+def calc_signal(signal_id,route_filepath,filepath):
+    signal_nodes, signal_edges = [],[]
+    signal_info = parse_1signal(route_filepath,signal_id)
+    signal_nodes = calc_si_nodes(signal_info,filepath)
+    signal_edges = calc_si_edges(signal_nodes)
+
+    return signal_nodes,signal_edges
+
+def draw_signal(signal_id,SIGNAL_COLOR,route_filepath,filepath,ax):
+    signal_nodes,signal_edges = calc_signal(signal_id,route_filepath,filepath)
+    for node in signal_nodes:
+        draw_singlenode(node,ax,SIGNAL_COLOR)
+    for edge in signal_edges:
+        print(f'{edge}')
+        ax.add_line(Line2D([edge[0],edge[1]], [edge[2],edge[3]], color=SIGNAL_COLOR, linewidth=WIRE_THICKNESS))
+
+def calc_bounding_box(signal_id,route_filepath,filepath):
     max_x,max_y = 0,0
     min_x, min_y = 7*2+BLOCK_SIZE,7*2+BLOCK_SIZE
-
-    nodes_dict = {node['id']: node for node in parse_nodes(filepath)}
-    signal_id_list = parse_1signal(route_filepath,signal_id)
-    signal_list = [nodes_dict[node_id] for node_id in signal_id_list if node_id in nodes_dict]
-
+    signal_list, _ = calc_signal(signal_id,route_filepath,filepath)
     for node in signal_list:
         if node['type'] in ('SINK, SOURCE'):
             #DA SELEKTUJE CEO BLOK A NE SAMO POLA BLOKA
@@ -266,6 +280,11 @@ def draw_bounding_box(signal_id,SIGNAL_COLOR,route_filepath,filepath,ax):
             min_y = min(node['a_y1'],node['a_y2'])
         if (max(node['a_y1'],node['a_y2'])>max_y):
             max_y = max(node['a_y1'],node['a_y2'])
+
+    return min_x, min_y, max_x,max_y
+
+def draw_bounding_box(signal_id,SIGNAL_COLOR,route_filepath,filepath,ax):
+    min_x, min_y, max_x,max_y  = calc_bounding_box(signal_id,route_filepath,filepath)
     ax.add_patch(patches.Rectangle((min_x, min_y),(max_x-min_x),(max_y-min_y),facecolor=SIGNAL_COLOR,edgecolor='none',alpha=0.2,linewidth=4*BLOCK_SIZE))
 
 if __name__ == '__main__':

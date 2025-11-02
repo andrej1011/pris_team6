@@ -115,7 +115,7 @@ def parse_nodes(filepath):
             'a_x2':absolute_x2,
             'a_y2':absolute_y2,
         }
-        if (side!='None'):
+        if (side is not None):
             node_info['side'] = side
         
         nodes_list.append(node_info)
@@ -138,10 +138,13 @@ def parse_edges(filepath):
     return edges_list
 
 def parse_1signal(filepath, signal_id):
+    signal_list =  parse_all_signals(filepath).get(signal_id, [])
+    return signal_list
 
-    signal_nodes_list = []
-    capturing = False # Flag koji oznacava da li smo na trazenom signalu
-    
+def parse_all_signals(filepath):
+    net_to_nodes = {}
+    current_net = -1
+
     net_pattern = re.compile(r"Net\s+(\d+)\s+")
     node_id_pattern = re.compile(r"Node:\s*(\d+)\s*")
 
@@ -149,27 +152,26 @@ def parse_1signal(filepath, signal_id):
         with open(filepath, 'r') as f:
             for line in f:
                 line = line.strip()
+                
                 net_match = net_pattern.match(line)
                 if net_match:
                     current_net = int(net_match.group(1))
-                    if current_net == signal_id:
-                        capturing = True
-                    elif capturing:
-                        break
+                    net_to_nodes[current_net] = []
                     continue
-                if capturing:
+                if current_net != -1:
                     node_match = node_id_pattern.search(line)
                     if node_match:
                         node_id = int(node_match.group(1))
-                        signal_nodes_list.append(node_id)
-            return signal_nodes_list
+                        net_to_nodes[current_net].append(node_id)
+
+            return net_to_nodes
             
     except FileNotFoundError:
         print(f"Greška: Fajl '{filepath}' nije pronađen.")
-        return []
+        return {}
     except Exception as e:
-        print(f"Došlo je do greške prilikom čitanja fajla: {e}")
-        return []
+        print(f"PARSE_ALL_SIGNALS Došlo je do greške prilikom čitanja fajla: {e}")
+        return {}
 
 if __name__ == '__main__':
     print(f"{ERROR_RED}Greska: Ovaj fajl se ne moze pokrenuti!\n        Pokrenite main.py fajl!")
