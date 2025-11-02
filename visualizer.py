@@ -284,7 +284,7 @@ def calc_bounding_box(signal_id,route_filepath,filepath):
     return min_x, min_y, max_x,max_y
 
 def draw_bounding_box(signal_id,SIGNAL_COLOR,route_filepath,filepath,ax):
-    min_x, min_y, max_x,max_y  = calc_bounding_box(signal_id,route_filepath,filepath)
+    min_x, min_y, max_x, max_y  = calc_bounding_box(signal_id,route_filepath,filepath)
     ax.add_patch(patches.Rectangle((min_x, min_y),(max_x-min_x),(max_y-min_y),facecolor=SIGNAL_COLOR,edgecolor='none',alpha=0.2,linewidth=4*BLOCK_SIZE))
 
 if __name__ == '__main__':
