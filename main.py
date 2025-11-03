@@ -57,5 +57,3 @@ if __name__ == '__main__':
         openfile(drawing_file)
     end_time = TIME()
     print("Ukupno vreme:" + TIMER(end_time-start_time))
-
-    #openfile(drawing_file)

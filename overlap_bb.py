@@ -12,12 +12,11 @@ def overlap(route_filepath, filepath='b9/rrg.xml', prefix="overlap_reports/overl
         log_file.write(f"PROVERA BOUNDING BOX PREKLAPANJA ZA {route_filepath}\n")
         log_file.write(f"   Koordinate: (min_x, min_y, max_x,max_y)\n\n")
         for i in range(len(lista_svega)):
+            signal_i = lista_svega[i]
+            i_k = signal_i[1]
             for j in range(i + 1, len(lista_svega)):
-                
-                signal_i = lista_svega[i]
-                signal_j = lista_svega[j]
 
-                i_k = signal_i[1]
+                signal_j = lista_svega[j]
                 j_k = signal_j[1]
 
                 preklapanje_X = (i_k[0] <= j_k[2] and i_k[2] >= j_k[0])

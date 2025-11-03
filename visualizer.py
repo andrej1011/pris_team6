@@ -29,12 +29,10 @@ def draw(drawing_file,r_filepath,want_edges,want_signal,signal_id,want_bb,want_o
     if(want_signal):
         draw_multi_signals(signal_id,r_filepath,filepath,ax)
     if(want_bb):
-        draw_bounding_box(signal_id,SIGNAL_COLOR,r_filepath,filepath,ax)
+        draw_bounding_box(signal_id,r_filepath,filepath,ax)
     if(want_overlap):
         #TODO must implement multi-signal before
-        draw_signal(signal_id,SIGNAL_COLOR,r_filepath,filepath,ax)
-        draw_signal(72,"#FFEE00",r_filepath,filepath,ax)
-        draw_overlap(signal_id,72,r_filepath,ax,SIGNAL_COLOR,"#FFEE00")   
+        draw_overlap(signal_id,r_filepath,ax)   
     # Podešavanje izgleda grafika
     ax.set_xlim(0, max_x*2-BLOCK_SIZE)
     ax.set_ylim(0, max_y*2-BLOCK_SIZE)
@@ -184,7 +182,7 @@ def draw_singlenode(node,ax,SIGNAL_COLOR):
     if(type =='SINK'):
         ax.add_patch(patches.Circle((a_x1, a_y1), radius=0.1, color=SIGNAL_COLOR))
     elif(type=='SOURCE'):
-        ax.add_patch(patches.Polygon(triangle(a_x1, a_y1, 0.3), color=SIGNAL_COLOR+"80"))
+        ax.add_patch(patches.Polygon(triangle(a_x1, a_y1, 0.3), color=SIGNAL_COLOR))
     elif(type=='CHANY'):
         ax.add_line(Line2D([a_x1, a_x2], [a_y1+DRAWING_OFFSET, a_y2-DRAWING_OFFSET], color=SIGNAL_COLOR, linewidth=WIRE_THICKNESS*3))
     elif(type=='CHANX'):
@@ -287,11 +285,14 @@ def calc_bounding_box(signal_id,route_filepath,filepath):
 
     return min_x, min_y, max_x,max_y
 
-def draw_bounding_box(signal_id,SIGNAL_COLOR,route_filepath,filepath,ax):
+def draw_bounding_box(signal_id_list,route_filepath,filepath,ax,lista_boja=None):
     #automatsko crtanje i signala
-    draw_signal(signal_id,SIGNAL_COLOR,route_filepath,filepath)
-    min_x, min_y, max_x, max_y  = calc_bounding_box(signal_id,route_filepath,filepath)
-    ax.add_patch(patches.Rectangle((min_x, min_y),(max_x-min_x),(max_y-min_y),facecolor=SIGNAL_COLOR,edgecolor='none',alpha=0.2,linewidth=4*BLOCK_SIZE))
+    if(lista_boja is None):
+        lista_boja = SIGNAL_COLOR(len(signal_id_list))
+    for (signal_id, color) in zip(signal_id_list, lista_boja):
+        draw_signal(signal_id, color, route_filepath,filepath, ax)
+        min_x, min_y, max_x, max_y  = calc_bounding_box(signal_id,route_filepath,filepath)
+        ax.add_patch(patches.Rectangle((min_x, min_y),(max_x-min_x),(max_y-min_y),facecolor=color,edgecolor='none',alpha=0.2,linewidth=4*BLOCK_SIZE))
 
 def calc_all_bboxes(route_filepath,filepath):
     all_signal = parse_all_signals(route_filepath)
@@ -301,25 +302,35 @@ def calc_all_bboxes(route_filepath,filepath):
     return all_bboxes
     #signal[0] je signal_id a signal[1] je lista min_x, min_y, max_x,max_y od bb-a
 
-def draw_overlap(signal_id1,signal_id2,route_filepath,ax,OVERLAP_1COLOR,OVERLAP_2COLOR=None,filepath='b9/rrg.xml',prefix = "overlap_reports/overlap_"):
+def draw_overlap(signal_id_list,route_filepath,ax,filepath='b9/rrg.xml',prefix = "overlap_reports/overlap_"):
     
-    #TODO must implement multi-signal before
-
     report_file = f"{prefix}{only_number()-1}.log"
-    bb1= calc_bounding_box(signal_id1,route_filepath,filepath)
-    bb2= calc_bounding_box(signal_id2,route_filepath,filepath)
-    if OVERLAP_2COLOR is None:
-        OVERLAP_2COLOR = OVERLAP_1COLOR
-    with open(report_file, 'a', encoding='utf-8') as log_file:
-        preklapanje_X = (bb1[0] <= bb2[2] and bb1[2] >= bb2[0])
-        preklapanje_Y = (bb1[1] <= bb2[3] and bb1[3] >= bb2[1])
+    lista_boja = SIGNAL_COLOR(len(signal_id_list))
+    if isinstance(signal_id_list, set):
+        signal_id_list = list(signal_id_list)
 
-        if (preklapanje_X and preklapanje_Y):
-            log_file.write(f"BOUNDING BOX SIGNALA {signal_id1} I {signal_id2} SE PREKLAPAJU.\n")
-        else:
-            log_file.write(f"BOUNDING BOX SIGNALA {signal_id1} I {signal_id2} SE NE PREKLAPAJU.\n")
-        draw_bounding_box(signal_id1,OVERLAP_1COLOR,route_filepath,filepath,ax)
-        draw_bounding_box(signal_id2,OVERLAP_2COLOR,route_filepath,filepath,ax)
+    with open(report_file, 'a', encoding='utf-8') as log_file:
+        log_file.write(f"PROVERA BOUNDING BOX PREKLAPANJA ZA SIGNALE {signal_id_list} \n .ROUTE FAJL: {route_filepath}\n")
+        log_file.write(f"   Koordinate: (min_x, min_y, max_x,max_y)\n\n")
+        for i in range(len(signal_id_list)):
+            signal_i = signal_id_list[i]
+            i_k = calc_bounding_box(signal_i,route_filepath,filepath)
+            for j in range(i + 1, len(signal_id_list)):
+                
+                signal_j = signal_id_list[j]
+                j_k = calc_bounding_box(signal_j,route_filepath,filepath)
+
+                preklapanje_X = (i_k[0] <= j_k[2] and i_k[2] >= j_k[0])
+                preklapanje_Y = (i_k[1] <= j_k[3] and i_k[3] >= j_k[1])
+                if (preklapanje_X and preklapanje_Y):
+                    
+                    log_file.write(f"BOUNDING BOX SIGNALA {signal_i} I {signal_j} SE PREKLAPAJU.\n")
+                    log_file.write("\n")
+                else:
+                    log_file.write(f"BOUNDING BOX SIGNALA {signal_i} I {signal_j} SE NE PREKLAPAJU.\n")
+                    log_file.write("\n")
+
+            draw_bounding_box([signal_id_list[i]],route_filepath,filepath,ax,[lista_boja[i]])
 
 def draw_multi_signals(signal_id_list,route_filepath,filepath,ax):
     lista_boja = SIGNAL_COLOR(len(signal_id_list))
