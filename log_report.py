@@ -43,3 +43,7 @@ def log_append(total_time, drawing_file, report_file = None):
         if(report_file is not None):
             log_file.write(f"   {report_file}\n")
         log_file.write("---------------------------------------------\n")
+
+if __name__ == '__main__':
+    print(f"Greska: Ovaj fajl se ne moze pokrenuti!\n        Pokrenite main.py fajl!")
+    exit(1)

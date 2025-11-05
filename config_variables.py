@@ -44,7 +44,11 @@ def SIGNAL_COLOR(broj_boja,alpha_hex='80'):
             
     return lista_boja
 
+#DEFINICIJE ISKORISCENIH NODEOVA ZA HEATMAP.PY
+heavily_used_node = 4 # 4 i vise
+very_used_node = 2 # 2 i vise
+
 
 #FILENAMES OF IMAGES
-filepath = 'b9/rrg.xml'
+rrg_filepath = 'b9/rrg.xml'
 file_prefix = 'slike/fpga_'

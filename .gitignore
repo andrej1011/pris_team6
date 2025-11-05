@@ -16,6 +16,4 @@ tester_fajlovi/
 
 #Hardcoded main za brze testiranje novih funkcija
 hmain.py
-
-#HEATMAP.py je u izradi
-heatmap.py
+tempmain.py
