@@ -20,11 +20,6 @@ COLOROF_EDGE_INDOT = "#000000BB"
 COLOROF_EDGE_OUTDOT = "#9F9F9FFF"
 SIGNAL_COLOR = "#34AAFF" 
 
-def tamnija(hex_color):  #TODO: ZASTARELA FUNKCIJA, Deprecate this function
-    hex = hex_color.lstrip('#')
-    r, g, b = int(hex[0:2], 16), int(hex[2:4], 16), int(hex[4:6], 16)
-    return f"#{int(r * 0.5):02x}{int(g * 0.5):02x}{int(b * 0.5):02x}"
-
 def SIGNAL_COLOR(broj_boja,alpha_hex='80'):
     FIKSNE_BOJE = [
     "#34AAFF",  # 1. Plava

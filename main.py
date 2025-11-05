@@ -1,12 +1,14 @@
 from visualizer import draw
 from overlap_bb import overlap
+from heatmap import heatmap_func
 from folderopen import openfile, new_filename
 from times import TIME,TIMER
+from log_report import log_info,log_append
 
 if __name__ == '__main__':
     # Pokretanje funkcije za iscrtavanje
     edges,signal,bb,bb_overlap,overlap_report,heatmap = False,False,False,False,False,False
-    fajl, signal_id = None, None
+    drawing_file,report_file,fajl, signal_id = None, None, None, None
 
     print("\n===== GLAVNI MENI =====")
     print("1. Vizuelizacija arhitekture čipa")
@@ -37,23 +39,35 @@ if __name__ == '__main__':
     elif choice == '5':
         heatmap = True
         fajl = input("Unesite lokaciju .route fajla: \n")
+
+
     elif choice == '6':
         print("Izlazim iz programa.")
         exit(0)
     else:
-        print("Pogrešan unos, pokušajte ponovo.")
+        print("Pogrešan unos, izlazim iz programa.")
         exit(0)
 
     
     start_time = TIME()
+    log_info(start_time,fajl,edges,signal,signal_id,bb,bb_overlap,overlap_report,heatmap)
     if(overlap_report):
-        overlap(fajl)
-        openfile("overlap_reports/overlap.log")
+        drawing_file = new_filename("reports/overlap_",".log")
+        overlap(drawing_file,fajl)
     elif(heatmap):
-        print("Opcija heatmap nije jos uvek implementirana.")
+        drawing_file = new_filename("slike/heatmap_")
+        report_file = new_filename("reports/heatmap_",".log")
+        heatmap_func(drawing_file,report_file,fajl)
     else:
         drawing_file = new_filename()
-        draw(drawing_file,fajl,edges,signal,signal_id,bb,bb_overlap)
-        openfile(drawing_file)
+        if(bb_overlap):
+            report_file = new_filename("reports/overlap_",".log")
+        draw(drawing_file,fajl,edges,signal,signal_id,bb,bb_overlap,report_file)
     end_time = TIME()
-    print("Ukupno vreme:" + TIMER(end_time-start_time))
+    total_time = TIMER(end_time-start_time)
+    print("Ukupno vreme:" + total_time)
+    log_append(total_time,drawing_file,report_file)
+
+    openfile(drawing_file)
+    if(report_file is not None):
+        openfile(drawing_file)

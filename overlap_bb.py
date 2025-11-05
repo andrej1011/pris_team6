@@ -1,12 +1,6 @@
 from visualizer import calc_all_bboxes
-from folderopen import only_number
-
-def overlap_report_file(prefix):
-    return f"{prefix}{only_number()}.log"
-
     
-def overlap(route_filepath, filepath='b9/rrg.xml', prefix="overlap_reports/overlap_"):
-    report_file = overlap_report_file(prefix)
+def overlap(report_file, route_filepath, filepath='b9/rrg.xml', prefix="overlap_reports/overlap_"):
     lista_svega = calc_all_bboxes(route_filepath, filepath)
     with open(report_file, 'a', encoding='utf-8') as log_file:
         log_file.write(f"PROVERA BOUNDING BOX PREKLAPANJA ZA {route_filepath}\n")

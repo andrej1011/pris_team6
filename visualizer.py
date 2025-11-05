@@ -14,7 +14,7 @@ SIGNAL_COLOR
 
 
 
-def draw(drawing_file,r_filepath,want_edges,want_signal,signal_id,want_bb,want_overlap):
+def draw(drawing_file,r_filepath,want_edges,want_signal,signal_id,want_bb,want_overlap,report_file=None):
 
     filepath = 'b9/rrg.xml'
     max_x, max_y = parse_size(filepath)
@@ -31,8 +31,7 @@ def draw(drawing_file,r_filepath,want_edges,want_signal,signal_id,want_bb,want_o
     if(want_bb):
         draw_bounding_box(signal_id,r_filepath,filepath,ax)
     if(want_overlap):
-        #TODO must implement multi-signal before
-        draw_overlap(signal_id,r_filepath,ax)   
+        draw_overlap(signal_id,r_filepath,ax,report_file)
     # Podešavanje izgleda grafika
     ax.set_xlim(0, max_x*2-BLOCK_SIZE)
     ax.set_ylim(0, max_y*2-BLOCK_SIZE)
@@ -302,9 +301,8 @@ def calc_all_bboxes(route_filepath,filepath):
     return all_bboxes
     #signal[0] je signal_id a signal[1] je lista min_x, min_y, max_x,max_y od bb-a
 
-def draw_overlap(signal_id_list,route_filepath,ax,filepath='b9/rrg.xml',prefix = "overlap_reports/overlap_"):
+def draw_overlap(signal_id_list,route_filepath,ax,report_file,filepath='b9/rrg.xml'):
     
-    report_file = f"{prefix}{only_number()-1}.log"
     lista_boja = SIGNAL_COLOR(len(signal_id_list))
     if isinstance(signal_id_list, set):
         signal_id_list = list(signal_id_list)
