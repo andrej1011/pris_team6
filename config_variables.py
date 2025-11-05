@@ -44,6 +44,26 @@ def SIGNAL_COLOR(broj_boja,alpha_hex='80'):
             
     return lista_boja
 
+#HEATMAP COLORS
+heat_colorsgrid = {
+        'io': "#31023E",  # IO boja malo svetlija od pozadine
+        'clb': "#3D034F", # CLB boja malo svetlija od IO boje
+    }
+heat_background_purple = '#1a0023' 
+heatmap_colors = [
+    "#600088",  # h0 (Magenta - new darkest color)
+    "#c51c82",  # h1 (Pink)
+    "#e0466c",  # h2 (Red-pink)
+    "#f57b50",  # h3 (Red-orange)
+    "#fca63f",  # h4 (Orange)
+    "#fcd33f",  # h5 (Golden yellow)
+    "#fae940",  # h6 (Bright yellow)
+    "#faf27e",  # h7 (Light yellow)
+    "#fcf6c8",  # h8 (Pale yellow)
+    "#fefee0",  # h9 (Very pale yellow)
+    "#ffffff"   # h10 (Full white)
+]
+
 #DEFINICIJE ISKORISCENIH NODEOVA ZA HEATMAP.PY
 heavily_used_node = 4 # 4 i vise
 very_used_node = 2 # 2 i vise
