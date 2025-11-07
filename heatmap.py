@@ -285,5 +285,5 @@ def heatmap_report(nodelist, report_file, route_filepath,nodes_lookup):
         
 
 if __name__ == '__main__':
-    pp = compile_all_edges("b9/b9.route")
-    print(pp)
+    print(f"Greska: Ovaj fajl se ne moze pokrenuti!\n        Pokrenite main.py fajl!")
+    exit(1)

@@ -11,6 +11,10 @@ slike/*
 reports/*
 logs/*
 
+!slike/
+!reports/
+!logs/
+
 #Fajlovi koji sluze samo za testiranje novih funkcija
 tester_fajlovi/
 
