@@ -1,3 +1,17 @@
+#TAČKA 17. MATPLOTLIB DEPENDENCY CHECK
+#IAKO GA MAIN NE KORISTI, BOLJE DA ŠTO PRE BACI GREŠKU, PRE KORIŠĆENJA PROGRAMA
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    print("Greška: Nedostaje ključna biblioteka: matplotlib")
+    print("-" * 50)
+    print("Program ne može da radi bez ove biblioteke.")
+    print("Molim vas instalirajte je koristeći sledeću komandu u terminalu:\n")
+    print("pip install matplotlib")
+    print("-" * 50)
+    print("\nIzlazim iz programa.")
+    exit(1)
+
 from visualizer import draw
 from overlap_bb import overlap
 from heatmap import heatmap_func
