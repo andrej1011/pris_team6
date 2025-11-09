@@ -1,23 +1,32 @@
 import subprocess
 import os
+import sys
 from config_variables import file_prefix
 
 def openfile(filename="slike/fpga.png"):
-    try:
-        # MacOS
-        subprocess.run(["open", "-R", filename])
-        
-    except Exception as e:
-        try:
-            # Linux
-            directory = os.path.dirname(filename)
-            subprocess.run(["xdg-open", directory])
-        except:
-            # Windows
-            directory = os.path.dirname(filename)
-            os.startfile(filename)
-            #print(f"An error occurred: {e}")
+    directory = os.path.dirname(filename)
 
+    if directory == "":
+        directory = "."
+
+    directory = os.path.abspath(directory)
+
+    try:
+        if sys.platform == "win32":
+            # Windows
+            os.startfile(directory)
+        elif sys.platform == "darwin":
+            # MacOS
+            subprocess.run(["open", directory])
+        elif sys.platform.startswith("linux"):
+            # Linux
+            subprocess.run(["xdg-open", directory])
+        else:
+            print(f"Unsupported operating system: {sys.platform}")
+    except Exception as e:
+        print(f"An error occurred trying to open the directory: {e}")
+
+        
 def new_filename(prefix="slike/fpga_",ext=".png"):
    new_number = uncountable_number()
    return f"{prefix}{new_number}{ext}"

@@ -11,9 +11,9 @@ slike/*
 reports/*
 logs/*
 
-!slike/
-!reports/
-!logs/
+!slike/.gitkeep
+!reports/.gitkeep
+!logs/.gitkeep
 
 #Fajlovi koji sluze samo za testiranje novih funkcija
 tester_fajlovi/
