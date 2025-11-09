@@ -20,7 +20,7 @@ COLOROF_EDGE_INDOT = "#000000BB"
 COLOROF_EDGE_OUTDOT = "#9F9F9FFF"
 SIGNAL_COLOR = "#34AAFF" 
 
-def SIGNAL_COLOR(broj_boja,alpha_hex='80'):
+def SIGNAL_COLOR(broj_boja,alpha_hex='50'): #BOJE SU PROVIDNIJE
     FIKSNE_BOJE = [
     "#34AAFF",  # 1. Plava
     "#B00101",  # 2. Crvena

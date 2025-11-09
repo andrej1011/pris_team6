@@ -4,7 +4,6 @@ import matplotlib.patches as patches
 from matplotlib.lines import Line2D
 from math import sqrt
 
-from folderopen import only_number
 from parse import parse_edges, parse_grid, parse_size, parse_nodes, parse_1signal,parse_all_signals
 
 #VARIJABLE
@@ -14,7 +13,7 @@ SIGNAL_COLOR
 
 
 
-def draw(drawing_file,r_filepath,want_edges,want_signal,signal_id,want_bb,want_overlap,report_file=None):
+def draw(drawing_file,r_filepath,want_edges,want_signal,signal_id,want_bb,want_overlap,want_filtered,want_filter_report,report_file=None,option=None,signal_no=None,):
 
     filepath = 'b9/rrg.xml'
     max_x, max_y = parse_size(filepath)
@@ -26,18 +25,19 @@ def draw(drawing_file,r_filepath,want_edges,want_signal,signal_id,want_bb,want_o
 
     if(want_edges):
         draw_edges(filepath,ax)
-    if(want_signal):
+    elif(want_signal):
         draw_multi_signals(signal_id,r_filepath,filepath,ax)
-    if(want_bb):
+    elif(want_bb):
         draw_bounding_box(signal_id,r_filepath,filepath,ax)
-    if(want_overlap):
+    elif(want_overlap):
         draw_overlap(signal_id,r_filepath,ax,report_file)
+    elif(want_filtered):
+        draw_filtered_signals(want_filter_report,option,signal_no,r_filepath,filepath,ax,report_file)
     # Podešavanje izgleda grafika
     ax.set_xlim(0, max_x*2-BLOCK_SIZE)
     ax.set_ylim(0, max_y*2-BLOCK_SIZE)
     ax.set_aspect('equal', adjustable='box')
     ax.axis('off')
-    fig.canvas.manager.set_window_title("FPGA Chip Layout")
     fig.tight_layout()
     plt.rcParams['savefig.dpi'] = 600 #POVECAN DPI SLIKE
     plt.savefig(drawing_file)
@@ -335,7 +335,70 @@ def draw_multi_signals(signal_id_list,route_filepath,filepath,ax):
     for (signal_id, color) in zip(signal_id_list, lista_boja):
         draw_signal(signal_id, color, route_filepath, filepath, ax)
 
+def filter_report(option, signal_no, route_filepath, top_signals, report_file):
+    with open(report_file, 'w', encoding='utf-8') as log_file:
+        log_file.write("SIGNAL FILTER REPORT\n\n")
+        log_file.write(f"ROUTE FAJL: {route_filepath}\n")
+        log_file.write(f"FILTER: {option}\n")
+        log_file.write(f"BROJ SIGNALA: {signal_no}\n\n")
+
+        signal_ids = [s['id'] for s in top_signals]
+        log_file.write(f"SIGNALI: {signal_ids}\n\n")
+
+        for signal in top_signals:
+            log_file.write(f"SIGNAL {signal['id']}:\n")
+            if 'SINK' in option:
+                 log_file.write(f" BROJ SINKOVA: {signal['sink_count']}\n")
+            elif 'BB' in option:
+                 log_file.write(f" VISINA BB: {signal['height_bb']:.2f}\n")
+                 log_file.write(f" ŠIRINA BB: {signal['width_bb']:.2f}\n")
+                 log_file.write(f" POVRŠINA BB: {signal['bb_area']:.2f}\n")
+            log_file.write("\n")
+
+
+def draw_filtered_signals(want_report,option, signal_no, route_filepath, filepath, ax, report_file):
+    all_signals_dict = parse_all_signals(route_filepath)
+    signal_metrics = []
+
+    for signal_id in all_signals_dict.keys():
+        signal_nodes, _ = calc_signal(signal_id, route_filepath, filepath)
+        sink_count = sum(1 for node in signal_nodes if node['type'] == 'SINK')
+
+        # Za BB povrsinu
+        min_x, min_y, max_x, max_y = calc_bounding_box(signal_id, route_filepath, filepath)
+        width = max_x - min_x
+        height = max_y - min_y
+        area = width * height
+
+        signal_metrics.append({
+            'id': signal_id,
+            'sink_count': sink_count,
+            'width_bb': width,
+            'height_bb': height,
+            'bb_area': area
+        })
+
+    if option == 'MINSINK':
+        signal_metrics.sort(key=lambda x: x['sink_count'])
+    elif option == 'MAXSINK':
+        signal_metrics.sort(key=lambda x: x['sink_count'], reverse=True)
+    elif option == 'MINBB':
+        signal_metrics.sort(key=lambda x: x['bb_area'])
+    elif option == 'MAXBB':
+        signal_metrics.sort(key=lambda x: x['bb_area'], reverse=True)
+
+    top_signals = signal_metrics[:signal_no]
+    top_signal_ids = [s['id'] for s in top_signals]
+    if(want_report):
+        filter_report(option,signal_no,route_filepath,top_signals,report_file)
+    if(option in 'MINBB','MAXBB'):
+        draw_bounding_box(top_signal_ids,route_filepath,filepath,ax)
+    else:
+        draw_multi_signals(top_signal_ids, route_filepath, filepath, ax)
+
+
+
+
 if __name__ == '__main__':
-    print(f"{ERROR_RED}Greska: Ovaj fajl se ne moze pokrenuti!\n        Pokrenite main.py fajl!")
+    print(f"{ERROR_RED}Greska: (visualizer.py) se ne moze pokrenuti!\n        Pokrenite main.py fajl!")
     exit(1)
-    
