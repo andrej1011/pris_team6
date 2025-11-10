@@ -20,7 +20,7 @@ COLOROF_EDGE_INDOT = "#000000BB"
 COLOROF_EDGE_OUTDOT = "#9F9F9FFF"
 SIGNAL_COLOR = "#34AAFF" 
 
-def SIGNAL_COLOR(broj_boja,alpha_hex='50'): #BOJE SU PROVIDNIJE
+def SIGNAL_COLOR(broj_boja,alpha_hex='70'): #ALPHA VRACEN NA 50%, ZBOG VIDLJIVOSTI SIGNALA
     FIKSNE_BOJE = [
     "#34AAFF",  # 1. Plava
     "#B00101",  # 2. Crvena
@@ -72,3 +72,7 @@ very_used_node = 2 # 2 i vise
 #FILENAMES OF IMAGES
 rrg_filepath = 'b9/rrg.xml'
 file_prefix = 'slike/fpga_'
+
+if __name__ == '__main__':
+    print(f"{ERROR_RED}Greska: (config_variables.py) se ne moze pokrenuti!\n        Pokrenite main.py fajl!")
+    exit(1)

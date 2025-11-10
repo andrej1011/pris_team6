@@ -13,7 +13,7 @@ SIGNAL_COLOR
 
 
 
-def draw(drawing_file,r_filepath,want_edges,want_signal,signal_id,want_bb,want_overlap,want_filtered,want_filter_report,report_file=None,option=None,signal_no=None,):
+def draw(drawing_file,r_filepath,want_edges,want_signal,signal_id,want_bb,want_overlap,want_filtered,want_filter_report,report_file=None,option=None,signal_no=None):
 
     filepath = 'b9/rrg.xml'
     max_x, max_y = parse_size(filepath)
@@ -29,10 +29,11 @@ def draw(drawing_file,r_filepath,want_edges,want_signal,signal_id,want_bb,want_o
         draw_multi_signals(signal_id,r_filepath,filepath,ax)
     elif(want_bb):
         draw_bounding_box(signal_id,r_filepath,filepath,ax)
-    elif(want_overlap):
-        draw_overlap(signal_id,r_filepath,ax,report_file)
+        if(want_overlap):
+            overlap_report(signal_id,r_filepath,ax,report_file)
     elif(want_filtered):
         draw_filtered_signals(want_filter_report,option,signal_no,r_filepath,filepath,ax,report_file)
+    
     # Podešavanje izgleda grafika
     ax.set_xlim(0, max_x*2-BLOCK_SIZE)
     ax.set_ylim(0, max_y*2-BLOCK_SIZE)
@@ -301,7 +302,7 @@ def calc_all_bboxes(route_filepath,filepath):
     return all_bboxes
     #signal[0] je signal_id a signal[1] je lista min_x, min_y, max_x,max_y od bb-a
 
-def draw_overlap(signal_id_list,route_filepath,ax,report_file,filepath='b9/rrg.xml'):
+def overlap_report(signal_id_list,route_filepath,ax,report_file,filepath='b9/rrg.xml'):
     
     lista_boja = SIGNAL_COLOR(len(signal_id_list))
     if isinstance(signal_id_list, set):
@@ -322,10 +323,10 @@ def draw_overlap(signal_id_list,route_filepath,ax,report_file,filepath='b9/rrg.x
                 preklapanje_Y = (i_k[1] <= j_k[3] and i_k[3] >= j_k[1])
                 if (preklapanje_X and preklapanje_Y):
                     
-                    log_file.write(f"BOUNDING BOX SIGNALA {signal_i} I {signal_j} SE PREKLAPAJU.\n")
+                    log_file.write(f"BOUNDING BOXEVI SIGNALA {signal_i} I {signal_j} SE PREKLAPAJU.\n")
                     log_file.write("\n")
                 else:
-                    log_file.write(f"BOUNDING BOX SIGNALA {signal_i} I {signal_j} SE NE PREKLAPAJU.\n")
+                    log_file.write(f"BOUNDING BOXEVI SIGNALA {signal_i} I {signal_j} SE NE PREKLAPAJU.\n")
                     log_file.write("\n")
 
             draw_bounding_box([signal_id_list[i]],route_filepath,filepath,ax,[lista_boja[i]])
@@ -391,9 +392,9 @@ def draw_filtered_signals(want_report,option, signal_no, route_filepath, filepat
     top_signal_ids = [s['id'] for s in top_signals]
     if(want_report):
         filter_report(option,signal_no,route_filepath,top_signals,report_file)
-    if(option in 'MINBB','MAXBB'):
+    if(option == 'MINBB' or option =='MAXBB'):
         draw_bounding_box(top_signal_ids,route_filepath,filepath,ax)
-    else:
+    elif (option in 'MINSINK','MAXSINK'):
         draw_multi_signals(top_signal_ids, route_filepath, filepath, ax)
 
 
